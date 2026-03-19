@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AlphaDesk — Live NSE F&O</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--g:#00c878;--gb:#00ff9d;--r:#ff6b6b;--gold:#ffd700;--bg:#020509}
+html,body{background:var(--bg);color:#e2e8f0;font-family:'Syne',sans-serif;min-height:100vh}
+body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(0,200,120,.08) 0%,transparent 70%),repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,200,120,.03) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,200,120,.03) 40px)}
+.app{max-width:680px;margin:0 auto;padding:18px 14px 40px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid rgba(0,200,120,.15);margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#00c878,#00ff9d);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px rgba(0,200,120,.4);flex-shrink:0}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;background:linear-gradient(90deg,#00ff9d,#00c878);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-sub{font-family:'Space Mono',monospace;font-size:9px;color:rgba(0,200,120,.55);letter-spacing:2px}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.live-badge{display:flex;align-items:center;gap:8px;background:rgba(0,200,120,.07);border:1px solid rgba(0,200,120,.2);border-radius:20px;padding:6px 14px;font-family:'Space Mono',monospace;font-size:11px;color:var(--g)}
+.live-dot{width:7px;height:7px;background:var(--g);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,200,120,.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(0,200,120,0)}}
+.refresh-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 13px;font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.45);cursor:pointer;transition:all .2s}
+.refresh-btn:hover{border-color:rgba(0,200,120,.35);color:var(--g);background:rgba(0,200,120,.07)}
+.refresh-btn:disabled{opacity:.4;cursor:not-allowed}
+.refresh-icon{display:inline-block;font-size:13px}
+.refresh-icon.spinning{animation:rspin .7s linear infinite}
+@keyframes rspin{to{transform:rotate(360deg)}}
+
+/* LOGIN SCREEN */
+.login-screen{background:rgba(255,255,255,.02);border:1px solid rgba(0,200,120,.2);border-radius:14px;padding:28px 24px;margin-bottom:20px}
+.login-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:#fff;margin-bottom:8px}
+.login-sub{font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:24px}
+.login-steps{margin-bottom:24px}
+.lstep{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.lstep-num{width:24px;height:24px;background:rgba(0,200,120,.15);border:1px solid rgba(0,200,120,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--g);flex-shrink:0;margin-top:1px}
+.lstep-text{font-size:13px;color:rgba(255,255,255,.65);line-height:1.6}
+.lstep-text a{color:var(--g);text-decoration:none}
+.lstep-text code{background:rgba(0,200,120,.08);border:1px solid rgba(0,200,120,.2);border-radius:4px;padding:2px 7px;font-family:'Space Mono',monospace;font-size:11px;color:var(--gb);word-break:break-all}
+.input-row{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.inp-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:4px}
+.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:12px 14px;font-family:'Space Mono',monospace;font-size:13px;color:#fff;outline:none;transition:border .2s}
+.inp:focus{border-color:rgba(0,200,120,.5)}
+.inp::placeholder{color:rgba(255,255,255,.2)}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,rgba(0,200,120,.18),rgba(0,200,120,.06));border:1px solid rgba(0,200,120,.45);border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--gb);cursor:pointer;transition:all .2s;letter-spacing:1px}
+.login-btn:hover{border-color:rgba(0,200,120,.8);box-shadow:0 0 24px rgba(0,200,120,.15)}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-url-box{background:rgba(0,200,120,.05);border:1px solid rgba(0,200,120,.2);border-radius:8px;padding:12px 14px;font-family:'Space Mono',monospace;font-size:11px;color:var(--gb);word-break:break-all;margin-bottom:12px;cursor:pointer;transition:all .2s}
+.auth-url-box:hover{background:rgba(0,200,120,.1)}
+.copy-hint{font-size:10px;color:rgba(0,200,120,.5);font-family:'Space Mono',monospace;margin-bottom:14px}
+.token-status{font-family:'Space Mono',monospace;font-size:11px;padding:10px 14px;border-radius:8px;margin-top:10px}
+.ts-ok{background:rgba(0,200,120,.1);border:1px solid rgba(0,200,120,.3);color:var(--gb)}
+.ts-err{background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.25);color:var(--r)}
+.ts-load{background:rgba(255,200,0,.06);border:1px solid rgba(255,200,0,.2);color:var(--gold)}
+
+/* TICKER BAR */
+.ticker-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.ticker-item{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;position:relative;overflow:hidden}
+.ticker-item.flash{animation:tickflash .4s ease}
+@keyframes tickflash{0%{background:rgba(0,200,120,.15)}100%{background:rgba(255,255,255,.025)}}
+.ticker-name{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:4px}
+.ticker-price{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:#fff}
+.ticker-chg{font-family:'Space Mono',monospace;font-size:10px;margin-top:2px}
+.chg-up{color:var(--gb)} .chg-dn{color:var(--r)} .chg-na{color:rgba(255,255,255,.25)}
+.ticker-time{font-family:'Space Mono',monospace;font-size:8px;color:rgba(255,255,255,.2);margin-top:3px}
+
+/* VIX ROW */
+.vix-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.vix-box{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px}
+.vix-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:4px}
+.vix-value{font-family:'Space Mono',monospace;font-size:15px;font-weight:700}
+
+/* TABS */
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{flex:1;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:11px 6px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);cursor:pointer;transition:all .2s;letter-spacing:1px;text-align:center}
+.tab:hover{border-color:rgba(0,200,120,.3);color:rgba(0,200,120,.7)}
+.tab.active{background:rgba(0,200,120,.1);border-color:rgba(0,200,120,.5);color:var(--gb);box-shadow:0 0 15px rgba(0,200,120,.1)}
+
+/* OPTIONS CHAIN TABLE */
+.chain-section{margin-bottom:18px}
+.chain-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:10px}
+.chain-table{width:100%;border-collapse:collapse;font-family:'Space Mono',monospace;font-size:11px}
+.chain-table th{padding:7px 8px;text-align:center;font-size:8px;letter-spacing:1px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.06)}
+.chain-table td{padding:7px 8px;text-align:center;color:rgba(255,255,255,.65);border-bottom:1px solid rgba(255,255,255,.04)}
+.chain-table tr:hover td{background:rgba(255,255,255,.02)}
+.ce-col{color:var(--gb)} .pe-col{color:var(--r)}
+.atm-row td{background:rgba(255,200,0,.05);color:#fff;font-weight:700}
+.atm-row .strike-col{color:var(--gold)}
+.strike-col{color:rgba(255,255,255,.8);font-weight:700}
+
+/* ANALYZE BUTTON */
+.analyze-btn{width:100%;padding:16px;background:linear-gradient(135deg,rgba(0,200,120,.14),rgba(0,200,120,.04));border:1px solid rgba(0,200,120,.4);border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--gb);cursor:pointer;transition:all .2s;letter-spacing:1px;margin-bottom:18px}
+.analyze-btn:hover:not(:disabled){border-color:rgba(0,200,120,.7);box-shadow:0 0 28px rgba(0,200,120,.15)}
+.analyze-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* LOADING */
+.loading{display:none;flex-direction:column;align-items:center;gap:14px;padding:40px 20px;color:rgba(0,200,120,.6);font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;text-align:center}
+.spinner{width:40px;height:40px;border:2px solid rgba(0,200,120,.12);border-top-color:var(--g);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ls{display:flex;align-items:flex-start;gap:10px;font-size:11px;color:rgba(0,200,120,.3);padding:4px 0;text-align:left}
+.ls.active{color:var(--g)} .ls.done{color:rgba(0,200,120,.2);text-decoration:line-through}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor;margin-top:4px;flex-shrink:0}
+
+/* RESULT CARD */
+.result-card{background:rgba(255,255,255,.018);border:1px solid rgba(0,200,120,.15);border-radius:14px;overflow:hidden;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.result-header{padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+.mkt-name{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mkt-time{font-family:'Space Mono',monospace;font-size:10px;color:rgba(255,255,255,.28);margin-top:3px}
+.dec-badge{padding:10px 18px;border-radius:8px;font-family:'Space Mono',monospace;font-weight:700;font-size:14px;letter-spacing:2px}
+.bc{background:rgba(0,200,120,.14);border:1px solid rgba(0,200,120,.4);color:var(--gb);box-shadow:0 0 18px rgba(0,200,120,.1)}
+.bp{background:rgba(255,60,60,.12);border:1px solid rgba(255,60,60,.35);color:var(--r)}
+.bn{background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.25);color:var(--gold)}
+.bias-tag{display:inline-block;padding:3px 9px;border-radius:4px;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1px}
+.bBULLISH{background:rgba(0,200,120,.14);color:var(--gb)}
+.bBEARISH{background:rgba(255,60,60,.12);color:var(--r)}
+.bSIDEWAYS{background:rgba(255,200,0,.1);color:var(--gold)}
+.bNEUTRAL{background:rgba(255,255,255,.07);color:rgba(255,255,255,.45)}
+.result-body{padding:20px}
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.mbox{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:13px 14px}
+.mlabel{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:5px}
+.mval{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#fff}
+.mg{color:var(--gb)} .mr{color:var(--r)}
+.strike-box{background:linear-gradient(135deg,rgba(0,200,120,.07),rgba(0,200,120,.02));border:1px solid rgba(0,200,120,.22);border-radius:10px;padding:14px 18px;margin-bottom:14px;font-family:'Space Mono',monospace}
+.slabel{font-size:8px;letter-spacing:2px;color:rgba(0,200,120,.5);text-transform:uppercase;margin-bottom:5px}
+.sval{font-size:15px;font-weight:700;color:var(--gb)}
+.conf-wrap{margin-bottom:16px}
+.conf-hdr{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:10px;color:rgba(255,255,255,.35);margin-bottom:7px}
+.conf-pct{font-size:13px;font-weight:700;color:var(--gb)}
+.conf-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.conf-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--g),var(--gb));box-shadow:0 0 10px rgba(0,200,120,.4);transition:width 1s ease}
+.data-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.ditem{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 12px}
+.dkey{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:2px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:4px}
+.dval{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:rgba(255,255,255,.75)}
+.rsect{border-top:1px solid rgba(255,255,255,.06);padding-top:16px}
+.rtitle{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:12px}
+.rblock{margin-bottom:14px}
+.rbtitle{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--g);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.rbbody{font-size:13px;line-height:1.75;color:rgba(255,255,255,.62)}
+
+/* COUNTDOWN */
+.countdown-wrap{margin-bottom:14px;display:none}
+.countdown-label{font-family:'Space Mono',monospace;font-size:9px;color:rgba(0,200,120,.4);text-align:right;margin-bottom:4px;letter-spacing:1px}
+.countdown-bar-bg{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.countdown-fill{height:100%;background:linear-gradient(90deg,var(--g),var(--gb));border-radius:2px;transition:width 1s linear;box-shadow:0 0 6px rgba(0,200,120,.4)}
+
+.error-box{display:none;background:rgba(255,60,60,.06);border:1px solid rgba(255,60,60,.2);border-radius:10px;padding:18px;color:rgba(255,110,110,.85);font-family:'Space Mono',monospace;font-size:12px;line-height:1.65}
+.last-updated{font-family:'Space Mono',monospace;font-size:9px;color:rgba(255,255,255,.2);margin-bottom:8px;display:none}
+.disclaimer{margin-top:20px;padding:13px 15px;background:rgba(255,200,0,.04);border:1px solid rgba(255,200,0,.1);border-radius:8px;font-size:10.5px;color:rgba(255,200,0,.4);font-family:'Space Mono',monospace;line-height:1.65}
+.logout-btn{font-family:'Space Mono',monospace;font-size:10px;color:rgba(255,100,100,.5);background:none;border:none;cursor:pointer;padding:2px 6px;float:right}
+.logout-btn:hover{color:var(--r)}
+
+@media(max-width:420px){
+  .metrics-grid{grid-template-columns:repeat(2,1fr)}
+  .data-grid{grid-template-columns:1fr}
+  .ticker-bar{grid-template-columns:1fr 1fr}
+  .ticker-bar .ticker-item:last-child{grid-column:1/-1}
+  .vix-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">📈</div>
+      <div>
+        <div class="logo-text">AlphaDesk</div>
+        <div class="logo-sub">NSE F&amp;O INTELLIGENCE</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="refresh-btn" id="refreshBtn" onclick="fullRefresh()">
+        <span class="refresh-icon" id="refreshIcon">↻</span> REFRESH
+      </button>
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    </div>
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-title">🔐 Connect Upstox Account</div>
+    <div class="login-sub">Connect your Upstox account to get real-time live prices, options chain, OI, PCR and VIX data directly from NSE.</div>
+
+    <div id="step1Block">
+      <div class="login-steps">
+        <div class="lstep">
+          <div class="lstep-num">1</div>
+          <div class="lstep-text">Enter your Upstox <strong>API Key</strong> and <strong>API Secret</strong> below</div>
+        </div>
+        <div class="lstep">
+          <div class="lstep-num">2</div>
+          <div class="lstep-text">Click <strong>"Generate Login Link"</strong> → open it → login with Upstox</div>
+        </div>
+        <div class="lstep">
+          <div class="lstep-num">3</div>
+          <div class="lstep-text">After login, copy the full URL from browser (starts with <code>http://localhost/?code=</code>) and paste below</div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div>
+          <div class="inp-label">API Key</div>
+          <input class="inp" id="apiKey" placeholder="e.g. cead0c8a-3f8a-42b1-9788-f8e73e76755c" value="cead0c8a-3f8a-42b1-9788-f8e73e76755c"/>
+        </div>
+        <div>
+          <div class="inp-label">API Secret</div>
+          <input class="inp" id="apiSecret" placeholder="e.g. xk1pdk25sw" value="xk1pdk25sw"/>
+        </div>
+      </div>
+      <button class="login-btn" onclick="generateAuthURL()">🔗 Generate Login Link</button>
+      <div id="authURLBlock" style="display:none;margin-top:14px">
+        <div class="auth-url-box" id="authURLBox" onclick="copyAuthURL()"></div>
+        <div class="copy-hint">👆 Tap to copy → open in browser → login → paste redirect URL below</div>
+        <div class="inp-label" style="margin-bottom:6px">Paste Redirect URL here</div>
+        <input class="inp" id="redirectURL" placeholder="http://localhost/?code=XXXXXXXX" style="margin-bottom:10px"/>
+        <button class="login-btn" id="tokenBtn" onclick="exchangeToken()">✅ Connect &amp; Get Live Data</button>
+        <div id="tokenStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP (hidden until logged in) -->
+  <div id="mainApp" style="display:none">
+
+    <!-- LIVE TICKER -->
+    <div class="ticker-bar">
+      <div class="ticker-item" id="ti-nifty">
+        <div class="ticker-name">NIFTY 50</div>
+        <div class="ticker-price" id="tp-nifty">—</div>
+        <div class="ticker-chg chg-na" id="tc-nifty">connecting...</div>
+        <div class="ticker-time" id="tt-nifty"></div>
+      </div>
+      <div class="ticker-item" id="ti-bnk">
+        <div class="ticker-name">BANKNIFTY</div>
+        <div class="ticker-price" id="tp-bnk">—</div>
+        <div class="ticker-chg chg-na" id="tc-bnk">connecting...</div>
+        <div class="ticker-time" id="tt-bnk"></div>
+      </div>
+      <div class="ticker-item" id="ti-snx">
+        <div class="ticker-name">SENSEX</div>
+        <div class="ticker-price" id="tp-snx">—</div>
+        <div class="ticker-chg chg-na" id="tc-snx">connecting...</div>
+        <div class="ticker-time" id="tt-snx"></div>
+      </div>
+    </div>
+
+    <!-- VIX + PCR ROW -->
+    <div class="vix-row">
+      <div class="vix-box">
+        <div class="vix-label">India VIX</div>
+        <div class="vix-value" id="vix-val" style="color:var(--gold)">—</div>
+      </div>
+      <div class="vix-box">
+        <div class="vix-label">Put Call Ratio</div>
+        <div class="vix-value" id="pcr-val" style="color:#fff">—</div>
+      </div>
+    </div>
+
+    <!-- OPTIONS CHAIN -->
+    <div class="chain-section" id="chainSection" style="display:none">
+      <div class="chain-title">OPTIONS CHAIN — <span id="chainExpiry"></span></div>
+      <div style="overflow-x:auto">
+        <table class="chain-table" id="chainTable">
+          <thead>
+            <tr>
+              <th class="ce-col">CE OI</th>
+              <th class="ce-col">CE LTP</th>
+              <th class="ce-col">CE IV</th>
+              <th class="strike-col">STRIKE</th>
+              <th class="pe-col">PE IV</th>
+              <th class="pe-col">PE LTP</th>
+              <th class="pe-col">PE OI</th>
+            </tr>
+          </thead>
+          <tbody id="chainBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="selectMarket(this,'NIFTY')">NIFTY</button>
+      <button class="tab" onclick="selectMarket(this,'BANKNIFTY')">BANKNIFTY</button>
+      <button class="tab" onclick="selectMarket(this,'FINNIFTY')">FINNIFTY</button>
+      <button class="tab" onclick="selectMarket(this,'SENSEX')">SENSEX</button>
+    </div>
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">
+      ⚡ Run AI Analysis — <span id="btnMarket">NIFTY</span>
+    </button>
+
+    <div id="lastUpdated" class="last-updated"></div>
+    <div class="countdown-wrap" id="countdownWrap">
+      <div class="countdown-label" id="countdownLabel">auto-refresh in 5:00</div>
+      <div class="countdown-bar-bg"><div class="countdown-fill" id="countdownFill" style="width:100%"></div></div>
+    </div>
+    <div id="loadingBlock" class="loading">
+      <div class="spinner"></div>
+      <div style="letter-spacing:2px">AI ANALYZING LIVE DATA</div>
+      <div style="width:100%;max-width:380px" id="stepsContainer"></div>
+    </div>
+    <div id="errorBlock" class="error-box"></div>
+    <div id="resultBlock"></div>
+
+    <button class="logout-btn" onclick="logout()">⏻ Disconnect</button>
+  </div>
+
+  <div class="disclaimer">
+    ⚠ DISCLAIMER: Educational &amp; informational purposes only. Options trading involves significant risk. NOT SEBI-registered advice. Always consult a certified financial advisor.
+  </div>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────
+let accessToken = localStorage.getItem('upstox_token') || '';
+let apiKey      = localStorage.getItem('upstox_key')   || 'cead0c8a-3f8a-42b1-9788-f8e73e76755c';
+let apiSecret   = localStorage.getItem('upstox_secret')|| 'xk1pdk25sw';
+let currentMarket = 'NIFTY';
+let stepTimer = null, countdownTimer = null, tickerTimer = null;
+let secsLeft = 300;
+let liveData = {}; // store fetched live data for AI
+
+// Upstox instrument keys
+const INSTRUMENTS = {
+  NIFTY:     'NSE_INDEX|Nifty 50',
+  BANKNIFTY: 'NSE_INDEX|Nifty Bank',
+  FINNIFTY:  'NSE_INDEX|Nifty Fin Service',
+  SENSEX:    'BSE_INDEX|SENSEX',
+  VIX:       'NSE_INDEX|India VIX',
+};
+
+const OPTION_KEYS = {
+  NIFTY:     'NSE_FO|',
+  BANKNIFTY: 'NSE_FO|',
+  FINNIFTY:  'NSE_FO|',
+  SENSEX:    'BSE_FO|',
+};
+
+// ─── INIT ─────────────────────────────────────────────
+window.onload = () => {
+  if(accessToken) {
+    showMainApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'block';
+    document.getElementById('mainApp').style.display = 'none';
+  }
+};
+
+// ─── AUTH FLOW ────────────────────────────────────────
+function generateAuthURL() {
+  const key = document.getElementById('apiKey').value.trim();
+  const sec = document.getElementById('apiSecret').value.trim();
+  if(!key||!sec){ alert('Please enter API Key and Secret'); return; }
+  apiKey = key; apiSecret = sec;
+  const url = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${key}&redirect_uri=http://localhost`;
+  const box = document.getElementById('authURLBox');
+  box.textContent = url;
+  document.getElementById('authURLBlock').style.display = 'block';
+  // try to open directly
+  window.open(url, '_blank');
+}
+
+function copyAuthURL() {
+  const txt = document.getElementById('authURLBox').textContent;
+  navigator.clipboard.writeText(txt).then(()=>{ document.getElementById('authURLBox').textContent = '✅ Copied! Now open in browser'; setTimeout(()=>{ document.getElementById('authURLBox').textContent = txt; }, 2000); });
+}
+
+async function exchangeToken() {
+  const redirectURL = document.getElementById('redirectURL').value.trim();
+  // Extract code from full URL or use raw code directly
+  let code = redirectURL;
+  if(redirectURL.includes('code=')) {
+    try { code = new URL(redirectURL).searchParams.get('code'); }
+    catch(_) { code = redirectURL.split('code=')[1]?.split('&')[0]; }
+  }
+  code = (code||'').trim();
+  if(!code){ setTokenStatus('⚠ Could not find code. Paste the full URL like: http://localhost/?code=XXXXX', 'err'); return; }
+
+  const key = document.getElementById('apiKey').value.trim();
+  const sec = document.getElementById('apiSecret').value.trim();
+  setTokenStatus('⏳ Exchanging authorization code for access token...', 'load');
+  document.getElementById('tokenBtn').disabled = true;
+
+  // Build body as plain string (avoids URLSearchParams cloning bug on mobile)
+  const bodyStr = 'code=' + encodeURIComponent(code)
+    + '&client_id=' + encodeURIComponent(key)
+    + '&client_secret=' + encodeURIComponent(sec)
+    + '&redirect_uri=' + encodeURIComponent('http://localhost')
+    + '&grant_type=authorization_code';
+
+  // Try direct first, then via CORS proxy
+  const endpoints = [
+    { url: 'https://api.upstox.com/v2/login/authorization/token', direct: true },
+    { url: 'https://corsproxy.io/?' + encodeURIComponent('https://api.upstox.com/v2/login/authorization/token'), direct: false },
+  ];
+
+  let lastErr = '';
+  for(const ep of endpoints) {
+    try {
+      const resp = await fetch(ep.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+        body: bodyStr
+      });
+      const data = await resp.json();
+      if(data.access_token) {
+        accessToken = data.access_token;
+        localStorage.setItem('upstox_token', accessToken);
+        localStorage.setItem('upstox_key', key);
+        localStorage.setItem('upstox_secret', sec);
+        setTokenStatus('✅ Connected successfully! Loading live data...', 'ok');
+        setTimeout(showMainApp, 800);
+        return;
+      } else {
+        lastErr = data.message || data.error_description || data.error || JSON.stringify(data);
+        // If code expired, stop trying
+        if(lastErr.toLowerCase().includes('expir') || lastErr.toLowerCase().includes('invalid')) break;
+      }
+    } catch(e) {
+      lastErr = e.message;
+    }
+  }
+
+  // If all attempts fail, show manual token option
+  setTokenStatus('⚠ Auto-exchange failed: ' + lastErr + '\n\nTry entering your Access Token manually below (get it from Upstox developer portal).', 'err');
+  document.getElementById('tokenBtn').disabled = false;
+  showManualTokenInput(key, sec);
+}
+
+function showManualTokenInput(key, sec) {
+  const existing = document.getElementById('manualTokenBlock');
+  if(existing) return;
+  const div = document.createElement('div');
+  div.id = 'manualTokenBlock';
+  div.style.marginTop = '12px';
+  div.innerHTML = `
+    <div class="inp-label" style="margin-bottom:6px">OR — Paste Access Token directly</div>
+    <input class="inp" id="manualToken" placeholder="Paste your Upstox access token here" style="margin-bottom:8px"/>
+    <button class="login-btn" onclick="useManualToken()">✅ Use This Token</button>
+  `;
+  document.getElementById('tokenBtn').parentNode.appendChild(div);
+}
+
+function useManualToken() {
+  const token = document.getElementById('manualToken')?.value.trim();
+  const key   = document.getElementById('apiKey').value.trim();
+  const sec   = document.getElementById('apiSecret').value.trim();
+  if(!token){ setTokenStatus('⚠ Please paste your access token.', 'err'); return; }
+  accessToken = token;
+  localStorage.setItem('upstox_token', token);
+  localStorage.setItem('upstox_key', key);
+  localStorage.setItem('upstox_secret', sec);
+  setTokenStatus('✅ Token saved! Loading live data...', 'ok');
+  setTimeout(showMainApp, 800);
+}
+
+function setTokenStatus(msg, type) {
+  const el = document.getElementById('tokenStatus');
+  el.className = 'token-status ts-' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function showMainApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  startLiveFeed();
+}
+
+function logout() {
+  localStorage.removeItem('upstox_token');
+  accessToken = '';
+  clearInterval(tickerTimer);
+  clearInterval(countdownTimer);
+  document.getElementById('loginScreen').style.display = 'block';
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('tokenStatus').style.display = 'none';
+  document.getElementById('authURLBlock').style.display = 'none';
+  document.getElementById('redirectURL').value = '';
+}
+
+// ─── LIVE DATA FEED ───────────────────────────────────
+async function upstoxGet(endpoint) {
+  const resp = await fetch('https://api.upstox.com' + endpoint, {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Accept': 'application/json' }
+  });
+  if(resp.status === 401) { logout(); throw new Error('Session expired. Please login again.'); }
+  return resp.json();
+}
+
+async function fetchLiveQuotes() {
+  try {
+    const keys = Object.values(INSTRUMENTS).join(',');
+    const data = await upstoxGet('/v2/market-quote/ltp?instrument_key=' + encodeURIComponent(keys));
+    if(data.data) {
+      const d = data.data;
+      updateTicker('nifty',  d['NSE_INDEX:Nifty 50'],      22000);
+      updateTicker('bnk',    d['NSE_INDEX:Nifty Bank'],     48000);
+      updateTicker('snx',    d['BSE_INDEX:SENSEX'],         72000);
+      const vix = d['NSE_INDEX:India VIX'];
+      if(vix) {
+        const vv = vix.last_price;
+        document.getElementById('vix-val').textContent = vv ? vv.toFixed(2) : '—';
+        document.getElementById('vix-val').style.color = vv > 20 ? 'var(--r)' : vv > 15 ? 'var(--gold)' : 'var(--gb)';
+      }
+      liveData.nifty_spot    = d['NSE_INDEX:Nifty 50']?.last_price;
+      liveData.banknifty_spot= d['NSE_INDEX:Nifty Bank']?.last_price;
+      liveData.sensex_spot   = d['BSE_INDEX:SENSEX']?.last_price;
+      liveData.vix           = d['NSE_INDEX:India VIX']?.last_price;
+    }
+  } catch(e) { console.log('quote err', e.message); }
+}
+
+function updateTicker(id, d, base) {
+  if(!d) return;
+  const price = d.last_price;
+  if(!price) return;
+  const pe = document.getElementById('tp-'+id);
+  const ce = document.getElementById('tc-'+id);
+  const te = document.getElementById('tt-'+id);
+  const ti = document.getElementById('ti-'+id);
+  if(pe) pe.textContent = '₹' + price.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const prev = parseFloat(pe?.dataset.prev || base);
+  const chg  = price - prev;
+  const pct  = ((chg / prev) * 100).toFixed(2);
+  if(ce) {
+    ce.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + ' (' + (chg >= 0 ? '+' : '') + pct + '%)';
+    ce.className   = 'ticker-chg ' + (chg >= 0 ? 'chg-up' : 'chg-dn');
+  }
+  if(te) te.textContent = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  if(ti) { ti.classList.remove('flash'); void ti.offsetWidth; ti.classList.add('flash'); }
+  if(pe) pe.dataset.prev = price;
+}
+
+async function fetchOptionsChain() {
+  try {
+    const expiries = await upstoxGet('/v2/option/contract?instrument_key=' + encodeURIComponent(INSTRUMENTS[currentMarket]));
+    if(!expiries.data || !expiries.data.length) return;
+    const nearExpiry = expiries.data[0].expiry;
+    document.getElementById('chainExpiry').textContent = nearExpiry;
+
+    const chain = await upstoxGet('/v2/option/chain?instrument_key=' + encodeURIComponent(INSTRUMENTS[currentMarket]) + '&expiry_date=' + nearExpiry);
+    if(!chain.data) return;
+
+    const spot = liveData[currentMarket.toLowerCase() + '_spot'] || 23000;
+    const atm  = Math.round(spot / 100) * 100;
+    const rows  = chain.data.filter(r => Math.abs(r.strike_price - atm) <= 500).sort((a,b) => a.strike_price - b.strike_price);
+
+    let totalCEOI = 0, totalPEOI = 0;
+    rows.forEach(r => { totalCEOI += r.call_options?.market_data?.oi || 0; totalPEOI += r.put_options?.market_data?.oi || 0; });
+    const pcr = totalCEOI ? (totalPEOI / totalCEOI).toFixed(2) : '—';
+    document.getElementById('pcr-val').textContent = pcr;
+    document.getElementById('pcr-val').style.color = parseFloat(pcr) > 1 ? 'var(--gb)' : parseFloat(pcr) < 0.7 ? 'var(--r)' : 'var(--gold)';
+    liveData.pcr = pcr;
+    liveData.chain = rows;
+
+    // find max pain
+    let maxPain = atm;
+    let minPain = Infinity;
+    rows.forEach(r => {
+      const s = r.strike_price;
+      let total = 0;
+      rows.forEach(x => {
+        total += Math.max(0, x.call_options?.market_data?.oi||0) * Math.max(0, s - x.strike_price);
+        total += Math.max(0, x.put_options?.market_data?.oi||0) * Math.max(0, x.strike_price - s);
+      });
+      if(total < minPain) { minPain = total; maxPain = s; }
+    });
+    liveData.max_pain = maxPain;
+
+    // render table
+    const tbody = document.getElementById('chainBody');
+    tbody.innerHTML = rows.map(r => {
+      const ce = r.call_options?.market_data;
+      const pe = r.put_options?.market_data;
+      const isATM = r.strike_price === atm;
+      const fmt = (n) => n ? (n/100000).toFixed(1)+'L' : '—';
+      return `<tr class="${isATM ? 'atm-row' : ''}">
+        <td class="ce-col">${fmt(ce?.oi)}</td>
+        <td class="ce-col">${ce?.ltp ? '₹'+ce.ltp : '—'}</td>
+        <td class="ce-col">${ce?.iv ? ce.iv.toFixed(1)+'%' : '—'}</td>
+        <td class="strike-col">${r.strike_price}${isATM ? ' ★' : ''}</td>
+        <td class="pe-col">${pe?.iv ? pe.iv.toFixed(1)+'%' : '—'}</td>
+        <td class="pe-col">${pe?.ltp ? '₹'+pe.ltp : '—'}</td>
+        <td class="pe-col">${fmt(pe?.oi)}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('chainSection').style.display = 'block';
+  } catch(e) { console.log('chain err', e.message); }
+}
+
+function startLiveFeed() {
+  fetchLiveQuotes();
+  fetchOptionsChain();
+  tickerTimer = setInterval(() => {
+    fetchLiveQuotes();
+    fetchOptionsChain();
+  }, 15000); // every 15 seconds
+}
+
+// ─── MARKET SELECT ────────────────────────────────────
+function selectMarket(el, m) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentMarket = m;
+  document.getElementById('btnMarket').textContent = m;
+  document.getElementById('resultBlock').innerHTML = '';
+  document.getElementById('errorBlock').style.display = 'none';
+  document.getElementById('chainSection').style.display = 'none';
+  fetchOptionsChain();
+}
+
+// ─── FULL REFRESH ─────────────────────────────────────
+function fullRefresh() {
+  const btn  = document.getElementById('refreshBtn');
+  const icon = document.getElementById('refreshIcon');
+  btn.disabled = true;
+  icon.classList.add('spinning');
+  document.getElementById('resultBlock').innerHTML = '';
+  document.getElementById('errorBlock').style.display = 'none';
+  ['nifty','bnk','snx'].forEach(id => {
+    document.getElementById('tp-'+id).textContent = '—';
+    document.getElementById('tc-'+id).textContent = 'refreshing...';
+    document.getElementById('tc-'+id).className = 'ticker-chg chg-na';
+  });
+  Promise.all([fetchLiveQuotes(), fetchOptionsChain()]).finally(() => {
+    icon.classList.remove('spinning');
+    btn.disabled = false;
+    runAnalysis().then(() => startCountdown()).catch(()=>{});
+  });
+}
+
+// ─── COUNTDOWN ────────────────────────────────────────
+function startCountdown() {
+  clearInterval(countdownTimer);
+  secsLeft = 300;
+  document.getElementById('countdownWrap').style.display = 'block';
+  updateCountdown();
+  countdownTimer = setInterval(() => {
+    secsLeft--;
+    updateCountdown();
+    if(secsLeft <= 0) { clearInterval(countdownTimer); fullRefresh(); }
+  }, 1000);
+}
+
+function updateCountdown() {
+  const m = Math.floor(secsLeft/60), s = secsLeft % 60;
+  document.getElementById('countdownLabel').textContent = 'auto-refresh in ' + m + ':' + String(s).padStart(2,'0');
+  document.getElementById('countdownFill').style.width = (secsLeft/300*100) + '%';
+}
+
+// ─── AI ANALYSIS ──────────────────────────────────────
+const STEPS = [
+  'Reading live options chain data...',
+  'Calculating PCR & OI buildup...',
+  'Analyzing VIX & volatility context...',
+  'Running technical framework...',
+  'Fetching FII/DII & macro news...',
+  'Computing trade probability...',
+  'Generating final decision...',
+];
+
+function startSteps() {
+  const c = document.getElementById('stepsContainer');
+  c.innerHTML = STEPS.map((s,i) => `<div class="ls" id="st${i}"><div class="sdot"></div>${s}</div>`).join('');
+  let i = 0;
+  document.getElementById('st0').classList.add('active');
+  stepTimer = setInterval(() => {
+    const cur = document.getElementById('st'+i);
+    if(cur){cur.classList.remove('active');cur.classList.add('done');}
+    i++;
+    const nxt = document.getElementById('st'+i);
+    if(nxt) nxt.classList.add('active'); else clearInterval(stepTimer);
+  }, 1000);
+}
+
+function safeParseJSON(text) {
+  let t = text.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+  const s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if(s===-1||e===-1) return null;
+  try { return JSON.parse(t.slice(s,e+1)); } catch(_){}
+  try {
+    let f = t.slice(s,e+1).replace(/,\s*([}\]])/g,'$1').replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g,'"$2":').replace(/:\s*'([^']*)'/g,':"$1"');
+    return JSON.parse(f);
+  } catch(_){ return null; }
+}
+
+function fallbackParse(text) {
+  const get = (rxs) => { for(const rx of rxs){ const m=text.match(rx); if(m) return m[1].trim().replace(/\*+/g,''); } return null; };
+  const dec  = text.match(/\b(CALL|PUT|NO[_\s]TRADE)\b/i)?.[1]?.toUpperCase().replace(/\s/,'_') || 'NO_TRADE';
+  const bias = text.match(/\b(BULLISH|BEARISH|SIDEWAYS)\b/i)?.[1]?.toUpperCase() || 'NEUTRAL';
+  return { decision:dec, bias, confidence:55, entry:get([/[Ee]ntry[:\s]+([₹\d,.]+)/]), target:get([/[Tt]arget[:\s]+([₹\d,.]+)/]), stop_loss:get([/[Ss]top.?[Ll]oss[:\s]+([₹\d,.]+)/]), strike:get([/(\w+ \d{4,6} [CP]E[^,\n]*)/]), technical:text.slice(0,400), risks:'Validate live data before trading.' };
+}
+
+async function runAnalysis() {
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  document.getElementById('resultBlock').innerHTML = '';
+  document.getElementById('errorBlock').style.display = 'none';
+  document.getElementById('lastUpdated').style.display = 'none';
+  document.getElementById('loadingBlock').style.display = 'flex';
+  startSteps();
+
+  const now = new Date();
+  const ist = now.toLocaleString('en-IN', {timeZone:'Asia/Kolkata', hour12:true});
+
+  // Build live data context from Upstox
+  const spot = liveData[currentMarket.toLowerCase()+'_spot'] || liveData.nifty_spot || 'unknown';
+  const chainSummary = (liveData.chain||[]).slice(0,10).map(r => {
+    const ce = r.call_options?.market_data;
+    const pe = r.put_options?.market_data;
+    return `Strike ${r.strike_price}: CE OI=${ce?.oi||0}, CE LTP=${ce?.ltp||0}, CE IV=${ce?.iv||0}%, PE OI=${pe?.oi||0}, PE LTP=${pe?.ltp||0}, PE IV=${pe?.iv||0}%`;
+  }).join('\n');
+
+  const PROMPT = `You are a professional NSE F&O derivatives trader. Analyze ${currentMarket} options for a trade right now.
+
+## LIVE REAL-TIME DATA FROM UPSTOX API (as of ${ist} IST):
+- ${currentMarket} Spot Price: ₹${spot}
+- India VIX: ${liveData.vix || 'unknown'}
+- PCR (Put-Call Ratio): ${liveData.pcr || 'unknown'}
+- Max Pain: ₹${liveData.max_pain || 'unknown'}
+- SENSEX: ₹${liveData.sensex_spot || 'unknown'}
+- BANKNIFTY: ₹${liveData.banknifty_spot || 'unknown'}
+
+## LIVE OPTIONS CHAIN (nearest expiry, ATM ±500):
+${chainSummary || 'Options chain data loading...'}
+
+## ADDITIONAL DATA — Search the web for:
+- "FII DII cash market data today NSE"
+- "India stock market news today"
+- "US market overnight Dow S&P Nasdaq"
+- "${currentMarket} technical levels support resistance today"
+
+## YOUR TASK:
+Using the LIVE Upstox data above + web search results, provide a high-probability options trade recommendation.
+
+Rules:
+- Entry/Target/SL are OPTION PREMIUM prices (not spot)
+- Risk:Reward must be ≥ 1:2
+- NO TRADE if confidence < 60% or VIX > 25
+- Strike should be ATM or nearest ITM
+
+Output ONLY this JSON (no text before or after, no markdown):
+{"decision":"CALL","bias":"BULLISH","confidence":75,"entry":"₹150","target":"₹230","stop_loss":"₹105","strike":"${currentMarket} 23200 CE 27-Mar-2026","spot_price":"₹${spot}","india_vix":"${liveData.vix||'—'}","pcr":"${liveData.pcr||'—'}","max_pain":"₹${liveData.max_pain||'—'}","sensex":"₹${liveData.sensex_spot||'—'}","fii_net":"data from web","technical":"Write 2-3 sentences using the live spot price and options chain data above","options_data":"Write 2-3 sentences about OI buildup, PCR, max pain from the chain data above","sentiment":"Write 2-3 sentences from web search about FII/DII, global cues, news","risks":"Write 1-2 sentences about what could invalidate this trade"}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        tools:[{type:'web_search_20250305', name:'web_search'}],
+        messages:[{role:'user', content:PROMPT}]
+      })
+    });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.error?.message||'API error');
+
+    const rawText = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    if(!rawText.trim()) throw new Error('Empty response. Try again.');
+
+    let parsed = safeParseJSON(rawText) || fallbackParse(rawText);
+
+    clearInterval(stepTimer);
+    document.getElementById('loadingBlock').style.display = 'none';
+    renderResult(parsed, ist);
+    const lu = document.getElementById('lastUpdated');
+    lu.textContent = 'Last updated: ' + ist + ' (Upstox live data)';
+    lu.style.display = 'block';
+
+  } catch(e) {
+    clearInterval(stepTimer);
+    document.getElementById('loadingBlock').style.display = 'none';
+    document.getElementById('errorBlock').textContent = '⚠ ' + e.message;
+    document.getElementById('errorBlock').style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ─── RENDER RESULT ────────────────────────────────────
+function badgeClass(d){if(!d)return 'bn';d=d.toUpperCase();if(d==='CALL')return 'bc';if(d==='PUT')return 'bp';return 'bn';}
+function biasClass(b){return {BULLISH:'bBULLISH',BEARISH:'bBEARISH',SIDEWAYS:'bSIDEWAYS'}[(b||'').toUpperCase()]||'bNEUTRAL';}
+
+function renderResult(d, ist) {
+  const decision=(d.decision||'NO TRADE').toUpperCase().replace(/\s/,'_');
+  const bias=(d.bias||'NEUTRAL').toUpperCase();
+  const showTrade=decision==='CALL'||decision==='PUT';
+  const dp=[{k:'Spot',v:d.spot_price},{k:'India VIX',v:d.india_vix},{k:'PCR',v:d.pcr},{k:'Max Pain',v:d.max_pain},{k:'Sensex',v:d.sensex},{k:'FII Net',v:d.fii_net}].filter(x=>x.v);
+
+  let h=`<div class="result-card"><div class="result-header"><div><div class="mkt-name">${currentMarket} <span class="bias-tag ${biasClass(bias)}">${bias}</span></div><div class="mkt-time">${ist} IST • Upstox Live</div></div><div class="dec-badge ${badgeClass(decision)}">${decision.replace('_',' ')}</div></div><div class="result-body">`;
+  if(showTrade){
+    h+=`<div class="metrics-grid"><div class="mbox"><div class="mlabel">Entry</div><div class="mval">${d.entry||'—'}</div></div><div class="mbox"><div class="mlabel">Target</div><div class="mval mg">${d.target||'—'}</div></div><div class="mbox"><div class="mlabel">Stop Loss</div><div class="mval mr">${d.stop_loss||'—'}</div></div></div>`;
+    if(d.strike) h+=`<div class="strike-box"><div class="slabel">Strike Suggestion</div><div class="sval">${d.strike}</div></div>`;
+  }
+  if(d.confidence) h+=`<div class="conf-wrap"><div class="conf-hdr"><span>CONFIDENCE SCORE</span><span class="conf-pct">${d.confidence}%</span></div><div class="conf-bar"><div class="conf-fill" id="cfill" style="width:0%"></div></div></div>`;
+  if(dp.length) h+=`<div class="data-grid">`+dp.map(p=>`<div class="ditem"><div class="dkey">${p.k}</div><div class="dval">${p.v}</div></div>`).join('')+`</div>`;
+  const sects=[{icon:'📊',title:'Technical',body:d.technical},{icon:'📋',title:'Options Flow',body:d.options_data},{icon:'📰',title:'Sentiment',body:d.sentiment},{icon:'⚠️',title:'Risk Factors',body:d.risks}].filter(s=>s.body);
+  if(sects.length){h+=`<div class="rsect"><div class="rtitle">AI ANALYSIS</div>`;sects.forEach(s=>{h+=`<div class="rblock"><div class="rbtitle">${s.icon} ${s.title}</div><div class="rbbody">${s.body}</div></div>`;});h+=`</div>`;}
+  h+=`</div></div>`;
+
+  document.getElementById('resultBlock').innerHTML=h;
+  if(d.confidence) setTimeout(()=>{const f=document.getElementById('cfill');if(f)f.style.width=d.confidence+'%';},150);
+}
+</script>
+</body>
+</html>
